@@ -22,8 +22,11 @@ logging.basicConfig(level=logging.ERROR, filename="error.log", filemode="a",
                     format="%(asctime)s - %(levelname)s - %(message)s")
 
 # Load environment variables
-load_dotenv()
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+# load_dotenv()
+# OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
+
 
 # Initialize OpenAI model
 llm = ChatOpenAI(
