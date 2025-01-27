@@ -5,3 +5,4 @@ mwparserfromhell
 langchain-community
 python-dotenv
 openai
+langchain-openai
