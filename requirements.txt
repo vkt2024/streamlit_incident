@@ -4,3 +4,4 @@ plotly
 mwparserfromhell
 langchain-community
 python-dotenv
+openai
