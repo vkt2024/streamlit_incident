@@ -1,0 +1,9 @@
+2025-01-27 13:15:32,077 - ERROR - Failed to extract incidents from 2020-01-27_app_server_latency.wikitext: Expected object or value
+2025-01-27 13:15:32,077 - ERROR - Response Text: The document does not provide specific details about the date, month, or year of the incident. However, it provides information about an incident involving an external demand for an expensive MW API query that slowed down the MW API web servers. This further affected the Recommendation API service, making it partially unavailable for about 35-40 minutes. Here is the JSON representation of the incident details:
+
+[{
+  "Date": "Not specified",
+  "Month": "Not specified",
+  "Year": "Not specified",
+  "Type": "MW API query overload resulting in server slowdown and partial unavailability of the Recommendation API service"
+}]

@@ -1,0 +1,6 @@
+streamlit
+pandas
+plotly
+mwparserfromhell
+langchain-community
+python-dotenv

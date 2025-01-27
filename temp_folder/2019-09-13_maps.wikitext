@@ -1,0 +1,80 @@
+{{irdoc|status=final}} <!--
+The status field should be one of:
+* {{irdoc|status=draft}} - Initial status. When you're happy with the state of your draft, change it to {{tl|irdoc-review}}.
+* {{irdoc|status=review}} - The incident review working group will contact you then to finalise the report. See also the steps on [[Incident documentation]].
+* {{irdoc|status=final}}
+-->
+
+== Summary ==
+On Friday September 13, map servers were saturating CPU due to some badly formed requests that were not validated properly by the service. This led to partial unavailability of maps from [https://grafana.wikimedia.org/d/000000607/cluster-overview?orgId=1&var-datasource=eqiad%20prometheus%2Fops&var-cluster=maps&var-instance=All&from=1568338295941&to=1568397389789 ~4:30 UTC to ~14:30 UTC]. Situation was resolved by validating traffic at the caching layer.
+
+=== Impact ===
+Service was degraded for ~9h.
+
+Thanks to tiles high cache hit ratio, only ~2% of requests were affected according to [https://turnilo.wikimedia.org/#webrequest_sampled_128/4/N4IgbglgzgrghgGwgLzgFwgewHYgFwhLYCmAtAMYAWcATmiADQgYC2xyOx+IAomuQHoAqgBUAwoxAAzCAjTEaUfAG1QaAJ4AHLgVZcmNYlO4B9E3sl6ASnGwBzYkryqQUNLXoEATAAYAjACcpD5BfgDMIj4+eFExPgB0UT4AWpLE2AAm3L6BwaEALJHRsVGJUakAvgC6FQxqWjquaDQQ9pKGxgQwLSaUmG6ScOQYONytkmCIMI4qICxwmlDxAO4QANYQbBkQcPGYNHYgVUzYmJ5SiFDE1UxQmkhoTi4a2txuLW1M22zYUFi4BEoaDQmhMbnQMCUt32nlAHW4lAgj0sDTeCggMy+EEMw3+3AyjnI6W2nxA2hamCyBBAtUImyR+D8Plq9Veuk2+hA33Sf1GBDMFiYdhothgCFoSPU3AACiIAKwAWUkUBh+DhRlM5g5KLZXI5vzxWJxIwBIDgUCJmVah1pSBYDLw2DFCBurnRM2c6qkCnSRIRSKh0n281hzFRBAJFzF9CYkwQ024NKYL0abHN3S4rs0rRIGQAIvreb8VMcyTniBkAMqqwEByQIYgOTJqvU/IsI4Gg8FoSH1+meJmxqYep0IBBMahQAByzvwFwQV1piLslCQK88o5dQA Turnilo]. Given the high number of tiles seen by a single user during a session, it is probably that most users were affected to some extend.
+
+=== Detection ===
+* [https://grafana.wikimedia.org/d/000000479/frontend-traffic?orgId=1&from=1568332800000&to=1568419200000&var-site=All&var-cache_type=upload&var-status_type=1&var-status_type=2&var-status_type=3&var-status_type=4 HTTP availability for Varnish] was flapping starting 4:26 UTC, getting worse by 6:49 UTC
+* No page was sent, no direct alert pointing to maps / kartotherian explicitly
+
+== Timeline ==
+'''All times in UTC.'''
+
+* ~04:20 '''OUTAGE BEGINS''' CPU saturated on maps servers (maps[12]00[1-4])
+* 04:26 icinga alert about HTTP availability for Varnish
+* 04:27 recovery of HTTP availability for Varnish
+* 05:40 icinga alert about HTTP availability for Varnish
+* 05:42 recovery of HTTP availability for Varnish
+* 06:49 icinga alert about HTTP availability for Varnish, starts falling regularly from now on
+* 06:52 maps identified as the cause of the above alert
+* 07:15 Icinga alert for kartotherian LVS endpoint
+* 08:33 kartotherian restarted on maps1003, with no effect
+* 08:37 rolling restart of karotherian
+* 08:45 stop tilerator on maps to help reduce load - no effect
+* 08:57 kartotherian eqiad depooled, problem moves to codfw
+* 08:57 identified increased occurrence of issue about parsing geojson [https://logstash.wikimedia.org/goto/6983c87f9f4f8c7bdaa16cc2a04907e8 in logs] (can't actually find that again, the graph now looks flat)
+* 09:11 kartotherian eqiad repooled
+* 09:24 deny access to /geoline on maps1004 - limited effect
+* 09:38 deny access to /geoshape on maps1004 - seems to reduce CPU load
+* 09:46 re-enabling /geoline on maps1004
+* 09:54 /geoshape heavily throttled on varnish - seems to be effective ({{gerrit|536549}})
+* 10:55 icinga alert for maps100[12] kartotherian endpoints health on maps1001 is CRITICAL
+* 12:37 temp ban of class of urls on maps1003 nginx
+* 12:56 banning more urls on maps1003
+* 13:12 ban problematic URLs at varnish ({{gerrit|536583}})
+* 13:38 ban problematic URLs at varnish ({{gerrit|536588}})
+* 14:20 ban problematic URLs at varnish ({{gerrit|536595}})
+* 14:30 '''OUTAGE ENDS'''
+
+== Conclusions ==
+A [[gerrit:c/mediawiki/services/kartotherian/+/523743/4/packages/kartotherian/lib/util.js#130|bug]] was introduced when fixing linting issues to introduce the CI into the CI pipeline, this created a failure in the HTTP error handler making Kartotherian unable to validate request parameters that leads to high CPU cost and timeout. This needs to be addressed in Kartotherian itself ({{gerrit|536641}}).
+
+The deploy of the code containing the bug occurred September 12 at 21:09 UTC.
+
+The amount of support we have on maps does not match the exposure of the service. While the few people working on maps are dedicated to their work and doing their best, we have too many (bad) surprises. The technical stack has many known and unknown issues and our knowledge of that stack is insufficient.
+
+The majority of maps traffic comes from other websites or apps reusing our tiles. This is allowed (at least to some extend) by [https://foundation.wikimedia.org/wiki/Maps_Terms_of_Use#Using_maps_in_third-party_services Maps Terms of Use] and was the original intent of the project. Given the amount of support we have at the moment, this might need to be revisited.
+
+=== What went well? ===
+* high caching ratio mitigated the visibility of the issue
+
+=== What went poorly? ===
+* knowledge of the stack is insufficient
+* logs were not very helpful and somewhat misleading (e.g. {{phab|T158657}}).
+
+=== Where did we get lucky? ===
+* ?
+
+=== How many people were involved in the remediation? ===
+* 6 SRE spending significant time during the incident
+* 2 SWE during the second half of the incident
+
+== Links to relevant documentation ==
+Documentation is minimal ([[Maps]]), but this specific problem is being addressed and unlikely to occur again.
+
+== Actionables ==
+* Fix HTTP error handler in kartotherian - {{gerrit|536641}} (code merged, but needs to be tested and deployed)
+*Improve testing tin kartotherian endpoints
+* Review the amount of support Maps has in regard of its visibility and use cases
+
+[[Category:Maps outages, 2019]]

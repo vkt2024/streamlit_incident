@@ -1,0 +1,10 @@
+{{irdoc|status=final}}
+== Summary ==
+External demand for an expensive MW API query, caused the MW API web servers to become overall slower to respond to other queries as well. Some of these queries became sufficiently slow as to trigger our execution timeout of 60 seconds. The [[Services/Monitoring/recommendation api|Recommendation API service]] was partially unavailable for about '''35-40 minutes''' as it uses the MW API for part of its work.
+== Timeline ==
+* (Grafana) RESTBase backend errors: <https://grafana.wikimedia.org/d/000000068/restbase?orgId=1&from=1580159395388&to=1580164542571>
+* (Logstash) MediaWIki errors & timeouts: <https://logstash.wikimedia.org/goto/613fac39acd1638eca41fd1649afe1da>
+
+Internal Google Doc: <https://docs.google.com/document/d/1H1HOA49S0pATzXlD1yQLQiSR12qsFkcagtLWg5Slz34/edit#>{{#ifeq:{{SUBPAGENAME}}|Report Template||
+[[Category:Incident documentation]]
+}}
