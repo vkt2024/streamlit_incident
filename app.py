@@ -61,13 +61,13 @@ def extract_incidents_with_openai(documents):
         # Extract year from the file name
         file_name = doc.metadata["source"]
         year_match = re.search(r"\b(19|20)\d{2}\b", file_name)
-        file_year = year_match.group(0) if year_match else None
+        file_year = year_match.group(0) if year_match else ""
 
         prompt = f"""
         Analyze the following document and extract each and all incident details in the format of a structured JSON array.
         Each entry in the JSON should include:
-        - "Date": The date of the incident (if mentioned).
-        - "Month": The month of the incident.
+        - "Date": The date of the incident (if mentioned, otherwise leave blank).
+        - "Month": The month of the incident (if mentioned, otherwise leave blank).
         - "Year": The year of the incident. If the year is missing or unclear, infer it as {file_year}.
         - "Type": A very short description of the type of incident. 
 
@@ -77,41 +77,48 @@ def extract_incidents_with_openai(documents):
         Please provide only the JSON array as the response.
         """
         response = llm.invoke(prompt)
-        response_text = response.content  # Extract the text content from AIMessage
+        response_text = response.content  # Extract text from AI response
 
         try:
-            # Parse the JSON response
+            # Parse JSON response
             incidents = pd.read_json(StringIO(response_text))
 
-            # Add the file's extracted year if the Year field is missing or invalid
-            if "Year" in incidents.columns:
-                incidents["Year"] = incidents["Year"].fillna(file_year).astype(str)
-                incidents["Year"] = incidents["Year"].apply(
-                    lambda x: file_year if not re.match(r"^\d{4}$", str(x)) else x)
-            else:
-                incidents["Year"] = file_year  # Use file year if Year is completely missing
+            # Ensure Year, Month, Date are blank if missing instead of "Not Mentioned"
+            for col in ["Year", "Month", "Date"]:
+                if col in incidents.columns:
+                    incidents[col] = incidents[col].replace(["Not Mentioned", None, "nan"], "")
 
-            # Add the source file name as metadata
+            # Fill in missing Year values with file name's extracted year
+            if "Year" in incidents.columns:
+                incidents["Year"] = incidents["Year"].apply(lambda x: file_year if x == "" else x)
+            else:
+                incidents["Year"] = file_year
+
+            # Ensure consistent data types
+            incidents["Year"] = incidents["Year"].astype(str)
             incidents["Source"] = file_name
+
+            # Append to extracted list
             extracted_incidents.append(incidents)
+
         except ValueError as e:
             logging.error(f"Failed to extract incidents from {file_name}: {e}")
             logging.error(f"Response Text: {response_text}")
             continue
 
-    # Combine extracted data into a single dataframe
+    # Combine extracted data into a single DataFrame
     if extracted_incidents:
         combined_df = pd.concat(extracted_incidents, ignore_index=True)
 
-        # Ensure Year is numeric and remove invalid entries
-        combined_df["Year"] = pd.to_numeric(combined_df["Year"], errors="coerce")
-        combined_df = combined_df.dropna(subset=["Year"])
-        combined_df["Year"] = combined_df["Year"].astype(int)
+        # Ensure column order: Year, Month, Date, Type, Source
+        ordered_columns = ["Year", "Month", "Date", "Type", "Source"]
+        combined_df = combined_df.reindex(columns=ordered_columns, fill_value="")
 
         return combined_df
 
-    # Return an empty dataframe if no valid incidents were extracted
-    return pd.DataFrame()
+    # Return an empty DataFrame if no valid incidents were extracted
+    return pd.DataFrame(columns=["Year", "Month", "Date", "Type", "Source"])
+
 
 # Function to set up the RAG system
 @st.cache_resource
@@ -137,8 +144,8 @@ def setup_rag_system(_documents):
 
 # Sidebar: Upload document files
 uploaded_files = st.sidebar.file_uploader(
-    "Upload your wikitext document files:", 
-    type=["wikitext"], 
+    "Upload your wikitext document files:",
+    type=["wikitext"],
     accept_multiple_files=True
 )
 
@@ -150,7 +157,7 @@ if uploaded_files:
         parsed = mwparserfromhell.parse(raw_content)
         plain_text = parsed.strip_code()
         documents.append(Document(page_content=plain_text, metadata={"source": uploaded_file.name}))
-    
+
     st.sidebar.success(f"Loaded {len(documents)} documents!")
 
     # Set up the RAG system
@@ -208,11 +215,9 @@ if uploaded_files:
 
             st.plotly_chart(year_chart, use_container_width=True)
 
-
             monthly_counts = incident_df.groupby(["Year", "Month"]).size().reset_index(name="Incident Count")
             monthly_counts["Year"] = monthly_counts["Year"].astype(int)
             st.subheader("Monthly Incident Count")
-
 
             month_chart = px.bar(
                 monthly_counts,
