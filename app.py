@@ -135,22 +135,31 @@ def setup_rag_system(_documents):
     return qa_system
 
 
-# Sidebar: Upload document database
-uploaded_folder = st.sidebar.text_input("Enter the path to your wikitext document database:")
-if uploaded_folder:
-    if not os.path.exists(uploaded_folder):
-        st.sidebar.error("The specified folder does not exist. Please enter a valid path.")
-    else:
-        documents = load_wikitext_documents(uploaded_folder)
-        st.sidebar.success(f"Loaded {len(documents)} documents!")
+# Sidebar: Upload document files
+uploaded_files = st.sidebar.file_uploader(
+    "Upload your wikitext document files:", 
+    type=["wikitext"], 
+    accept_multiple_files=True
+)
 
-        # Set up the RAG system
-        qa_system = setup_rag_system(documents)
+if uploaded_files:
+    documents = []
+    for uploaded_file in uploaded_files:
+        # Read the uploaded file content
+        raw_content = uploaded_file.read().decode("utf-8")
+        parsed = mwparserfromhell.parse(raw_content)
+        plain_text = parsed.strip_code()
+        documents.append(Document(page_content=plain_text, metadata={"source": uploaded_file.name}))
+    
+    st.sidebar.success(f"Loaded {len(documents)} documents!")
 
-        # Extract incidents using OpenAI
-        st.header("🔍 Incident Extraction")
-        with st.spinner("Extracting incidents from documents..."):
-            incident_df = extract_incidents_with_openai(documents)
+    # Set up the RAG system
+    qa_system = setup_rag_system(documents)
+
+    # Process and extract incidents
+    st.header("🔍 Incident Extraction")
+    with st.spinner("Extracting incidents from documents..."):
+        incident_df = extract_incidents_with_openai(documents)
 
         if not incident_df.empty:
             st.subheader("Extracted Incidents")
