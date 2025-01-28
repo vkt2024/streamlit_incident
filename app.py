@@ -208,26 +208,6 @@ if uploaded_files:
 
             st.plotly_chart(year_chart, use_container_width=True)
 
-            # Monthly Incident Count
-            # Drop rows with missing Year or Month values
-            # incident_df = incident_df.dropna(subset=["Year", "Month"])
-            #
-            # # Remove invalid values in the Year column (e.g., non-numeric values)
-            # incident_df = incident_df[incident_df["Year"].apply(lambda x: str(x).isdigit())]
-            #
-            # # Ensure Year is an integer
-            # incident_df["Year"] = incident_df["Year"].astype(int)
-            #
-            # # Standardize the Month column
-            # incident_df["Month"] = incident_df["Month"].str.strip()
-            # incident_df["Month"] = pd.Categorical(
-            #     incident_df["Month"],
-            #     categories=[
-            #         "January", "February", "March", "April", "May", "June",
-            #         "July", "August", "September", "October", "November", "December"
-            #     ],
-            #     ordered=True
-            # )
 
             monthly_counts = incident_df.groupby(["Year", "Month"]).size().reset_index(name="Incident Count")
             monthly_counts["Year"] = monthly_counts["Year"].astype(int)
@@ -252,19 +232,19 @@ if uploaded_files:
 
             st.plotly_chart(month_chart, use_container_width=True)
 
-            # Display Trends Over Time
-            # Aggregate incidents by date
-            daily_counts = incident_df.groupby("Date").size().reset_index(name="Incident Count")
+            # # Display Trends Over Time
+            # # Aggregate incidents by date
+            # daily_counts = incident_df.groupby("Date").size().reset_index(name="Incident Count")
 
-            # Create the line chart
-            trend_chart = px.line(
-                daily_counts,
-                x="Date",
-                y="Incident Count",
-                title="Incident Trends Over Time",
-                labels={"Date": "Date", "Incident Count": "Number of Incidents"},
-            )
-            st.plotly_chart(trend_chart, use_container_width=True)
+            # # Create the line chart
+            # trend_chart = px.line(
+            #     daily_counts,
+            #     x="Date",
+            #     y="Incident Count",
+            #     title="Incident Trends Over Time",
+            #     labels={"Date": "Date", "Incident Count": "Number of Incidents"},
+            # )
+            # st.plotly_chart(trend_chart, use_container_width=True)
 
             # Set up the RAG system
             st.header("🔍 Retrieval-Augmented Generation (RAG) System")
