@@ -38,7 +38,7 @@ llm = ChatOpenAI(
 # Streamlit App Configuration
 st.title("📄 Intelligent Document Analysis Tool")
 st.sidebar.title("⚙️ Options")
-st.sidebar.info("Please Upload your files to begin.")
+# st.sidebar.info("Please Upload your files to begin.")
 
 
 # Function to load and parse wikitext files
@@ -149,7 +149,7 @@ def setup_rag_system(_documents):
 
 # Sidebar: Upload document files
 uploaded_files = st.sidebar.file_uploader(
-    "Upload your document files:",
+    # "Upload your document files:",
     type=["wikitext"],
     accept_multiple_files=True
 )
