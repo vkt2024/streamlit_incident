@@ -85,7 +85,7 @@ def extract_incidents_with_openai(documents):
 
             #If no data for date,leave it blank.
             if "Date" in incidents.columns:
-              incidents["Date"] = pd.to_datetime(incidents["Date"], errors="coerce").fillna("").astype(str)
+              incidents["Date"] = incidents["Date"].apply(lambda x: "" if pd.isna(x) or x == "" or str(x).lower() in ["nan", "nat"] else str(x))
   
 
             # Ensure Year, Month, Date are blank if missing instead of "Not Mentioned"
