@@ -233,9 +233,9 @@ if uploaded_files:
             # )
 
             # Ensure Year appears as an integer in the legend
-            # month_chart.update_layout(coloraxis_colorbar=dict(tickformat=".0f"))
-            month_chart.update_layout(legend_title_text="Year")
-            month_chart.update_traces(marker_line_width=0.5)  # Improves readability
+            month_chart.update_layout(coloraxis_colorbar=dict(tickformat=".0f"))
+            # month_chart.update_layout(legend_title_text="Year")
+            # month_chart.update_traces(marker_line_width=0.5)  # Improves readability
 
             st.plotly_chart(month_chart, use_container_width=True)
 
