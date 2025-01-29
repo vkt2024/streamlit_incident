@@ -83,6 +83,11 @@ def extract_incidents_with_openai(documents):
             # Parse JSON response
             incidents = pd.read_json(StringIO(response_text))
 
+          #If no data for date,leave it blank.
+           if "Date" in incidents.columns:
+             incidents["Date"] = pd.to_datetime(incidents["Date"], errors="coerce").fillna("").astype(str)
+
+
             # Ensure Year, Month, Date are blank if missing instead of "Not Mentioned"
             for col in ["Year", "Month", "Date"]:
                 if col in incidents.columns:
