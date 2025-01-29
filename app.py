@@ -38,7 +38,7 @@ llm = ChatOpenAI(
 # Streamlit App Configuration
 st.title("📄 Intelligent Document Analysis Tool")
 st.sidebar.title("⚙️ Options")
-st.sidebar.info("Upload your document database to begin.")
+st.sidebar.info("Please Upload your files to begin.")
 
 
 # Function to load and parse wikitext files
