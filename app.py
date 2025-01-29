@@ -274,4 +274,4 @@ if uploaded_files:
         else:
             st.info("No incidents could be extracted from the documents.")
 else:
-    st.info("Please upload your document database to get started.")
+    st.info("Please upload your files to get started.")
