@@ -38,7 +38,7 @@ llm = ChatOpenAI(
 # Streamlit App Configuration
 st.title("📄 Intelligent Document Analysis Tool")
 st.sidebar.title("⚙️ Options")
-st.sidebar.info("Upload your wikitext document database to begin.")
+st.sidebar.info("Upload your document database to begin.")
 
 
 # Function to load and parse wikitext files
@@ -210,8 +210,8 @@ if uploaded_files:
                 labels={"Year": "Year", "Incident Count": "Number of Incidents"},
             )
 
-            # Update x-axis tick format to display integers only
-            year_chart.update_xaxes(tickformat=".0f")
+            # Ensure X-axis only has whole numbers (integer years)
+            year_chart.update_xaxes(tickmode="linear", dtick=1, tickformat=".0f")
 
             st.plotly_chart(year_chart, use_container_width=True)
 
@@ -233,7 +233,9 @@ if uploaded_files:
             # )
 
             # Ensure Year appears as an integer in the legend
-            month_chart.update_layout(coloraxis_colorbar=dict(tickformat=".0f"))
+            # month_chart.update_layout(coloraxis_colorbar=dict(tickformat=".0f"))
+            month_chart.update_layout(legend_title_text="Year")
+            month_chart.update_traces(marker_line_width=0.5)  # Improves readability
 
             st.plotly_chart(month_chart, use_container_width=True)
 
@@ -272,4 +274,4 @@ if uploaded_files:
         else:
             st.info("No incidents could be extracted from the documents.")
 else:
-    st.info("Please enter the path to your document database to get started.")
+    st.info("Please upload your document database to get started.")
