@@ -149,7 +149,7 @@ def setup_rag_system(_documents):
 
 # Sidebar: Upload document files
 uploaded_files = st.sidebar.file_uploader(
-    # " ",
+    # " . ",
     type=["wikitext"],
     accept_multiple_files=True
 )
